@@ -9,11 +9,8 @@ packages = [{include = "csmap_py"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-scipy = "^1.11.4"
 numpy = "^1.26.2"
-gdal = {version = "3.7.0", extras = ["numpy"]}
 rasterio = "^1.3.9"
-matplotlib = "^3.8.2"
 
 
 [tool.poetry.group.dev.dependencies]
