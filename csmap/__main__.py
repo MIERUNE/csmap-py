@@ -158,12 +158,13 @@ def height_blackwhite(arr: np.ndarray) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    dem_path = "./12ke56_1mdem.tif"
+    dem_path = "./12ke47_1mdem.tif"
     dem = rasterio.open(dem_path).read(1)
     slope = calc_slope(dem)
     g = gaussianfilter(dem, 12, 3)
     curvature = calc_curvature(g)
 
+    # TODO: まともな着色とブレンディング
     dem_rgb = rgbify(dem, height_blackwhite)
     slope_rgb = rgbify(slope, slope_red, scale=(0, 1.5))
     slope_rgb_bw = rgbify(slope, slope_blackwhite, scale=(0, 1.5))
@@ -186,6 +187,8 @@ if __name__ == "__main__":
     import os
 
     os.makedirs("output", exist_ok=True)
+
+    # TODO: TIFの領域はオリジナルのDEMより少し狭い（1pxのパディングがある）
     profile = rasterio.open(dem_path).profile
     profile.update(dtype=rasterio.uint8, count=4)
     with rasterio.open("output/rgb.tif", "w", **profile) as dst:
