@@ -99,10 +99,10 @@ def rgbify(arr: np.ndarray, method, scale: (float, float) = None) -> np.ndarray:
 
 def slope_red(arr: np.ndarray) -> np.ndarray:
     rgb = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb[0, :, :] = 160  # R
-    rgb[1, :, :] = 64 + (1 - arr) * 63  # G
-    rgb[2, :, :] = (1 - arr) * 127  # B
-    rgb[3, :, :] = arr * 255
+    rgb[0, :, :] = 255  # R
+    rgb[1, :, :] = (1 - arr) * 255  # G
+    rgb[2, :, :] = (1 - arr) * 255  # B
+    rgb[3, :, :] = 255
     return rgb
 
 
@@ -167,19 +167,26 @@ if __name__ == "__main__":
     dem_rgb = rgbify(dem, height_blackwhite)
     slope_rgb = rgbify(slope, slope_red, scale=(0, 1.5))
     slope_rgb_bw = rgbify(slope, slope_blackwhite, scale=(0, 1.5))
-    curvature_rgb_blue = rgbify(curvature, curvature_blue, scale=(-0.05, 0.05))
-    curvature_rgb_ryb = rgbify(curvature, curvature_redyellowblue, scale=(-0.05, 0.05))
+    curvature_rgb_blue = rgbify(curvature, curvature_blue, scale=(-0.1, 0.1))
+    curvature_rgb_ryb = rgbify(curvature, curvature_redyellowblue, scale=(-0.1, 0.1))
+
+    dem_rgb = dem_rgb[:, 1:-1, 1:-1]  # remove padding
+
+    # blend all rgb
+    blend = np.zeros((4, dem_rgb.shape[0], dem_rgb.shape[1]), dtype=np.uint8)
+    blend = (
+        dem_rgb * 0.2
+        + slope_rgb * 0.15
+        + slope_rgb_bw * 0.35
+        + curvature_rgb_blue * 0.1
+        + curvature_rgb_ryb * 0.20
+    )
 
     # write rgb to tif
+    import os
+
+    os.makedirs("output", exist_ok=True)
     profile = rasterio.open(dem_path).profile
     profile.update(dtype=rasterio.uint8, count=4)
-    with rasterio.open("dem_rgb.tif", "w", **profile) as dst:
-        dst.write(dem_rgb)
-    with rasterio.open("slope_rgb.tif", "w", **profile) as dst:
-        dst.write(slope_rgb)
-    with rasterio.open("slope_rgb_bw.tif", "w", **profile) as dst:
-        dst.write(slope_rgb_bw)
-    with rasterio.open("curvature_rgb_blue.tif", "w", **profile) as dst:
-        dst.write(curvature_rgb_blue)
-    with rasterio.open("curvature_rgb_ryb.tif", "w", **profile) as dst:
-        dst.write(curvature_rgb_ryb)
+    with rasterio.open("output/rgb.tif", "w", **profile) as dst:
+        dst.write(blend)
