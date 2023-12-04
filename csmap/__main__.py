@@ -5,6 +5,7 @@ import rasterio
 import numpy as np
 
 
+# TODO: 各種パラメータを引数で受け取る
 def csmap(dem: np.ndarray) -> np.ndarray:
     """DEMからCS立体図を作成する"""
     # calclucate elements
@@ -54,7 +55,8 @@ if __name__ == "__main__":
     dem = rasterio.open(args["dem_path"]).read(1)
 
     chunk_size = args["chunk_size"]
-    margin = 15  # ガウシアンフィルタのサイズ+シグマ：チャンクごとに「淵」が生じるのでこの部分は除外する必要がある
+    margin = 15  # ガウシアンフィルタのサイズ+シグマ
+    # チャンクごとの処理結果には「淵=margin」が生じるのでこの部分を除外する必要がある
 
     _csmap = np.zeros(
         (4, dem.shape[0] - 2, dem.shape[1] - 2), dtype=np.uint8
