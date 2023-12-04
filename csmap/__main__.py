@@ -1,5 +1,5 @@
-import calc
-import color
+from csmap import calc
+from csmap import color
 
 import rasterio
 import numpy as np
@@ -35,20 +35,34 @@ def csmap(dem: np.ndarray) -> np.ndarray:
     return blend
 
 
-if __name__ == "__main__":
-    dem_path = "./12ke47_1mdem.tif"
-    dem = rasterio.open(dem_path).read(1)
+def parse_args():
+    import argparse
 
-    chunk_size = 1024
+    parser = argparse.ArgumentParser()
+    parser.add_argument("dem_path", type=str)
+    parser.add_argument("--chunk_size", type=int, default=1024)
+    args = parser.parse_args()
+    return {
+        "dem_path": args.dem_path,
+        "chunk_size": args.chunk_size,
+    }
+
+
+if __name__ == "__main__":
+    args = parse_args()
+
+    dem = rasterio.open(args["dem_path"]).read(1)
+
+    chunk_size = args["chunk_size"]
     margin = 15  # ガウシアンフィルタのサイズ+シグマ：チャンクごとに「淵」が生じるのでこの部分は除外する必要がある
+
     _csmap = np.zeros(
         (4, dem.shape[0] - 2, dem.shape[1] - 2), dtype=np.uint8
-    )  # TODO: ハードコードをやめる
+    )  # 出来上がるCSMapはDEMより1px内側にpaddingされる
 
     # chunkごとに処理
     for y in range(0, dem.shape[0] - 2, chunk_size - margin):
         for x in range(0, dem.shape[1] - 2, chunk_size - margin):
-            print(f"y={y}, x={x}")
             chunk = dem[y : y + chunk_size, x : x + chunk_size]
             csmap_chunk = csmap(chunk)
             _csmap[
@@ -66,8 +80,8 @@ if __name__ == "__main__":
 
     os.makedirs("output", exist_ok=True)
 
-    # TODO: TIFの領域はオリジナルのDEMより少し狭い（1pxのパディングがある）
-    profile = rasterio.open(dem_path).profile
+    # TODO: 1px、paddingされることを考慮した領域設定(下記のコードはオリジナルのDEMの領域にしてしまっている)
+    profile = rasterio.open(args["dem_path"]).profile
     profile.update(dtype=rasterio.uint8, count=4)
     with rasterio.open("output/rgb.tif", "w", **profile) as dst:
         dst.write(_csmap)
