@@ -2,6 +2,8 @@ from csmap import calc
 from csmap import color
 
 import rasterio
+from rasterio.windows import Window
+from rasterio.transform import Affine
 import numpy as np
 
 
@@ -52,38 +54,75 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    dem = rasterio.open(args["dem_path"]).read(1)
+    with rasterio.open(args["dem_path"]) as dem:
+        chunk_size = args["chunk_size"]
+        margin = 15  # ガウシアンフィルタのサイズ+シグマ
+        # チャンクごとの処理結果には「淵=margin」が生じるのでこの部分を除外する必要がある
+        margin_to_removed = 2 * (margin // 2)  # 整数値に切り捨てた値*両端
 
-    chunk_size = args["chunk_size"]
-    margin = 15  # ガウシアンフィルタのサイズ+シグマ
-    # チャンクごとの処理結果には「淵=margin」が生じるのでこの部分を除外する必要がある
+        # csmapの出力用配列
+        _csmap = np.zeros(
+            (
+                4,
+                dem.shape[0] - margin_to_removed - 2,
+                dem.shape[1] - margin_to_removed - 2,
+            ),
+            dtype=np.uint8,
+        )
 
-    _csmap = np.zeros(
-        (4, dem.shape[0] - 2, dem.shape[1] - 2), dtype=np.uint8
-    )  # 出来上がるCSMapはDEMより1px内側にpaddingされる
+        # chunkごとに処理
+        chunk_csmap_size = chunk_size - margin_to_removed - 2
+        for y in range(0, dem.shape[0], chunk_csmap_size):
+            for x in range(0, dem.shape[1], chunk_csmap_size):
+                chunk = dem.read(1, window=Window(x, y, chunk_size, chunk_size))
+                csmap_chunk = csmap(chunk)  # shape = (4, chunk_size-2, chunk_size-2)
+                csmap_chunk_margin_removed = csmap_chunk[
+                    :,
+                    margin // 2 : -(margin // 2),
+                    margin // 2 : -(margin // 2),
+                ]  # shape = (4, chunk_csmap_size, chunk_csmap_size)
 
-    # chunkごとに処理
-    for y in range(0, dem.shape[0] - 2, chunk_size - margin):
-        for x in range(0, dem.shape[1] - 2, chunk_size - margin):
-            chunk = dem[y : y + chunk_size, x : x + chunk_size]
-            csmap_chunk = csmap(chunk)
-            _csmap[
-                :,
-                y + margin // 2 : y + chunk_size - margin // 2,
-                x + margin // 2 : x + chunk_size - margin // 2,
-            ] = csmap_chunk[
-                :,
-                margin // 2 : chunk_size - margin // 2,
-                margin // 2 : chunk_size - margin // 2,
-            ]
+                # csmpのどの部分を出力用配列に入れるかを計算
+                dy = y + chunk_csmap_size
+                dx = x + chunk_csmap_size
+                if dy > _csmap.shape[1]:
+                    dy = _csmap.shape[1]
+                if dx > _csmap.shape[2]:
+                    dx = _csmap.shape[2]
 
-    # write rgb to tif
-    import os
+                _csmap[
+                    :,
+                    y:dy,
+                    x:dx,
+                ] = csmap_chunk_margin_removed
 
-    os.makedirs("output", exist_ok=True)
+        # write rgb to tif
+        import os
 
-    # TODO: 1px、paddingされることを考慮した領域設定(下記のコードはオリジナルのDEMの領域にしてしまっている)
-    profile = rasterio.open(args["dem_path"]).profile
-    profile.update(dtype=rasterio.uint8, count=4)
-    with rasterio.open("output/rgb.tif", "w", **profile) as dst:
-        dst.write(_csmap)
+        os.makedirs("output", exist_ok=True)
+
+        # マージンを考慮したtransform
+        transform = Affine(
+            dem.transform.a,
+            dem.transform.b,
+            dem.transform.c + (1 + margin // 2) * dem.transform.a,  # 左端の座標をマージン分ずらす
+            dem.transform.d,
+            dem.transform.e,
+            dem.transform.f + (1 + margin // 2) * dem.transform.e,  # 上端の座標をマージン分ずらす
+            0.0,
+            0.0,
+            1.0,
+        )
+
+        with rasterio.open(
+            "output/rgb.tif",
+            "w",
+            driver="GTiff",
+            dtype=rasterio.uint8,
+            count=4,
+            width=_csmap.shape[2],
+            height=_csmap.shape[1],
+            crs=dem.crs,
+            transform=transform,
+        ) as dst:
+            dst.write(_csmap)
