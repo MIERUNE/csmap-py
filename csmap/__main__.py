@@ -60,42 +60,6 @@ if __name__ == "__main__":
         # チャンクごとの処理結果には「淵=margin」が生じるのでこの部分を除外する必要がある
         margin_to_removed = 2 * (margin // 2)  # 整数値に切り捨てた値*両端
 
-        # csmapの出力用配列
-        _csmap = np.zeros(
-            (
-                4,
-                dem.shape[0] - margin_to_removed - 2,
-                dem.shape[1] - margin_to_removed - 2,
-            ),
-            dtype=np.uint8,
-        )
-
-        # chunkごとに処理
-        chunk_csmap_size = chunk_size - margin_to_removed - 2
-        for y in range(0, dem.shape[0], chunk_csmap_size):
-            for x in range(0, dem.shape[1], chunk_csmap_size):
-                chunk = dem.read(1, window=Window(x, y, chunk_size, chunk_size))
-                csmap_chunk = csmap(chunk)  # shape = (4, chunk_size-2, chunk_size-2)
-                csmap_chunk_margin_removed = csmap_chunk[
-                    :,
-                    margin // 2 : -(margin // 2),
-                    margin // 2 : -(margin // 2),
-                ]  # shape = (4, chunk_csmap_size, chunk_csmap_size)
-
-                # csmpのどの部分を出力用配列に入れるかを計算
-                dy = y + chunk_csmap_size
-                dx = x + chunk_csmap_size
-                if dy > _csmap.shape[1]:
-                    dy = _csmap.shape[1]
-                if dx > _csmap.shape[2]:
-                    dx = _csmap.shape[2]
-
-                _csmap[
-                    :,
-                    y:dy,
-                    x:dx,
-                ] = csmap_chunk_margin_removed
-
         # write rgb to tif
         import os
 
@@ -114,15 +78,44 @@ if __name__ == "__main__":
             1.0,
         )
 
+        # 生成されるCS立体図のサイズ
+        out_width = dem.shape[1] - margin_to_removed - 2
+        out_height = dem.shape[0] - margin_to_removed - 2
+
         with rasterio.open(
             "output/rgb.tif",
             "w",
             driver="GTiff",
             dtype=rasterio.uint8,
             count=4,
-            width=_csmap.shape[2],
-            height=_csmap.shape[1],
+            width=out_width,
+            height=out_height,
             crs=dem.crs,
             transform=transform,
         ) as dst:
-            dst.write(_csmap)
+            # chunkごとに処理
+            chunk_csmap_size = chunk_size - margin_to_removed - 2
+            for y in range(0, dem.shape[0], chunk_csmap_size):
+                for x in range(0, dem.shape[1], chunk_csmap_size):
+                    chunk = dem.read(1, window=Window(x, y, chunk_size, chunk_size))
+                    csmap_chunk = csmap(
+                        chunk
+                    )  # shape = (4, chunk_size-2, chunk_size-2)
+                    csmap_chunk_margin_removed = csmap_chunk[
+                        :,
+                        margin // 2 : -(margin // 2),
+                        margin // 2 : -(margin // 2),
+                    ]  # shape = (4, chunk_csmap_size, chunk_csmap_size)
+
+                    # csmpのどの部分を出力用配列に入れるかを計算
+                    write_size_x = chunk_csmap_size
+                    write_size_y = chunk_csmap_size
+                    if x + chunk_csmap_size > out_width:
+                        write_size_x = out_width - x
+                    if y + chunk_csmap_size > out_height:
+                        write_size_y = out_height - y
+
+                    dst.write(
+                        csmap_chunk_margin_removed,
+                        window=Window(x, y, write_size_x, write_size_y),
+                    )
