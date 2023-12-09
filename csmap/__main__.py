@@ -11,7 +11,7 @@ def parse_args():
     parser.add_argument("--max_workers", type=int, default=1)
     parser.add_argument("--gf_size", type=int, default=12)
     parser.add_argument("--gf_sigma", type=int, default=3)
-    parser.add_argument("--cvt_size", type=int, default=1)
+    parser.add_argument("--curvature_size", type=int, default=1)
     parser.add_argument("--height_scale", type=float, nargs=2, default=[0.0, 1000.0])
     parser.add_argument("--slope_scale", type=float, nargs=2, default=[0.0, 1.5])
     parser.add_argument("--curvature_scale", type=float, nargs=2, default=[-0.1, 0.1])
@@ -21,7 +21,7 @@ def parse_args():
     params = CsmapParams(
         gf_size=args.gf_size,
         gf_sigma=args.gf_sigma,
-        cvt_size=args.cvt_size,
+        curvature_size=args.curvature_size,
         height_scale=args.height_scale,
         slope_scale=args.slope_scale,
         curvature_scale=args.curvature_scale,
