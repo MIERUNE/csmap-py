@@ -15,7 +15,7 @@ from csmap import color
 class CsmapParams:
     gf_size: int
     gf_sigma: int
-    cvt_size: int
+    curvature_size: int
     height_scale: (float, float)
     slope_scale: (float, float)
     curvature_scale: (float, float)
@@ -26,7 +26,7 @@ def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
     # calclucate elements
     slope = calc.slope(dem)
     g = calc.gaussianfilter(dem, params.gf_size, params.gf_sigma)
-    curvature = calc.curvature(g, params.cvt_size)
+    curvature = calc.curvature(g, params.curvature_size)
 
     # rgbify
     dem_rgb = color.rgbify(dem, color.height_blackwhite, scale=params.height_scale)
