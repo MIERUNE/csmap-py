@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from threading import Lock
+from concurrent import futures
 
 import numpy as np
 import rasterio
@@ -51,8 +53,43 @@ def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
     return blend
 
 
+def _process_chunk(
+    chunk: np.ndarray,
+    dst: rasterio.io.DatasetWriter,
+    x: int,
+    y: int,
+    write_size_x: int,
+    write_size_y: int,
+    params: CsmapParams,
+    lock: Lock = None,
+) -> np.ndarray:
+    """チャンクごとの処理"""
+    csmap_chunk = csmap(chunk, params)
+    csmap_chunk_margin_removed = csmap_chunk[
+        :,
+        params.gf_size // 2 : -(params.gf_size // 2),
+        params.gf_size // 2 : -(params.gf_size // 2),
+    ]  # shape = (4, chunk_size - margin, chunk_size - margin)
+
+    if lock is None:
+        dst.write(
+            csmap_chunk_margin_removed,
+            window=Window(x, y, write_size_x, write_size_y),
+        )
+    else:
+        with lock:
+            dst.write(
+                csmap_chunk_margin_removed,
+                window=Window(x, y, write_size_x, write_size_y),
+            )
+
+
 def process(
-    input_dem_path: str, output_path: str, chunk_size: int, params: CsmapParams
+    input_dem_path: str,
+    output_path: str,
+    chunk_size: int,
+    params: CsmapParams,
+    max_workers: int = 1,
 ):
     with rasterio.open(input_dem_path) as dem:
         margin = params.gf_size + params.gf_sigma  # ガウシアンフィルタのサイズ+シグマ
@@ -89,27 +126,54 @@ def process(
         ) as dst:
             # chunkごとに処理
             chunk_csmap_size = chunk_size - margin_to_removed - 2
-            for y in range(0, dem.shape[0], chunk_csmap_size):
-                for x in range(0, dem.shape[1], chunk_csmap_size):
-                    chunk = dem.read(1, window=Window(x, y, chunk_size, chunk_size))
-                    csmap_chunk = csmap(
-                        chunk, params
-                    )  # shape=(4,chunk_size-2,chunk_size-2)
-                    csmap_chunk_margin_removed = csmap_chunk[
-                        :,
-                        margin // 2 : -(margin // 2),
-                        margin // 2 : -(margin // 2),
-                    ]  # shape = (4, chunk_csmap_size, chunk_csmap_size)
 
-                    # csmpのどの部分を出力用配列に入れるかを計算
-                    write_size_x = chunk_csmap_size
-                    write_size_y = chunk_csmap_size
-                    if x + chunk_csmap_size > out_width:
-                        write_size_x = out_width - x
-                    if y + chunk_csmap_size > out_height:
-                        write_size_y = out_height - y
+            # 並列処理しない場合とする場合で処理を分ける
+            if max_workers == 1:
+                for y in range(0, dem.shape[0], chunk_csmap_size):
+                    for x in range(0, dem.shape[1], chunk_csmap_size):
+                        # csmpのどの部分を出力用配列に入れるかを計算
+                        write_size_x = chunk_csmap_size
+                        write_size_y = chunk_csmap_size
+                        if x + chunk_csmap_size > out_width:
+                            write_size_x = out_width - x
+                        if y + chunk_csmap_size > out_height:
+                            write_size_y = out_height - y
 
-                    dst.write(
-                        csmap_chunk_margin_removed,
-                        window=Window(x, y, write_size_x, write_size_y),
-                    )
+                        chunk = dem.read(1, window=Window(x, y, chunk_size, chunk_size))
+                        _process_chunk(
+                            chunk,
+                            dst,
+                            x,
+                            y,
+                            write_size_x,
+                            write_size_y,
+                            params,
+                        )
+            else:  # 並列処理する場合=ThreadPoolExecutorを使用する
+                lock = Lock()  # 並列処理のロック
+                with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    # chunkごとに処理
+                    for y in range(0, dem.shape[0], chunk_csmap_size):
+                        for x in range(0, dem.shape[1], chunk_csmap_size):
+                            # csmpのどの部分を出力用配列に入れるかを計算
+                            write_size_x = chunk_csmap_size
+                            write_size_y = chunk_csmap_size
+                            if x + chunk_csmap_size > out_width:
+                                write_size_x = out_width - x
+                            if y + chunk_csmap_size > out_height:
+                                write_size_y = out_height - y
+
+                            chunk = dem.read(
+                                1, window=Window(x, y, chunk_size, chunk_size)
+                            )
+                            executor.submit(
+                                _process_chunk,
+                                chunk,
+                                dst,
+                                x,
+                                y,
+                                write_size_x,
+                                write_size_y,
+                                params,
+                                lock,
+                            )
