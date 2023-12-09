@@ -8,6 +8,7 @@ def parse_args():
     parser.add_argument("input_dem_path", type=str)
     parser.add_argument("output_path", type=str)
     parser.add_argument("--chunk_size", type=int, default=1024)
+    parser.add_argument("--max_workers", type=int, default=1)
     parser.add_argument("--gf_size", type=int, default=12)
     parser.add_argument("--gf_sigma", type=int, default=3)
     parser.add_argument("--cvt_size", type=int, default=1)
@@ -30,6 +31,7 @@ def parse_args():
         "input_dem_path": args.input_dem_path,
         "output_path": args.output_path,
         "chunk_size": args.chunk_size,
+        "max_workers": args.max_workers,
         "params": params,
     }
 
