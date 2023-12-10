@@ -1,5 +1,7 @@
 # csmap-py
 
+![](./doc/csmap.png)
+
 module to process CSMap, based on https://www.rinya.maff.go.jp/j/seibi/sagyoudo/attach/pdf/romou-12.pdf
 
 ```
