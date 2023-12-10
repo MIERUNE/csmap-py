@@ -5,16 +5,40 @@ def parse_args():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_dem_path", type=str)
-    parser.add_argument("output_path", type=str)
-    parser.add_argument("--chunk_size", type=int, default=1024)
-    parser.add_argument("--max_workers", type=int, default=1)
-    parser.add_argument("--gf_size", type=int, default=12)
-    parser.add_argument("--gf_sigma", type=int, default=3)
-    parser.add_argument("--curvature_size", type=int, default=1)
-    parser.add_argument("--height_scale", type=float, nargs=2, default=[0.0, 1000.0])
-    parser.add_argument("--slope_scale", type=float, nargs=2, default=[0.0, 1.5])
-    parser.add_argument("--curvature_scale", type=float, nargs=2, default=[-0.1, 0.1])
+    parser.add_argument("input_dem_path", type=str, help="input DEM path")
+    parser.add_argument("output_path", type=str, help="output path")
+    parser.add_argument(
+        "--chunk_size", type=int, default=1024, help="chunk size as pixel"
+    )
+    parser.add_argument(
+        "--max_workers", type=int, default=1, help="max workers for multiprocessing"
+    )
+    parser.add_argument("--gf_size", type=int, default=12, help="gaussian filter size")
+    parser.add_argument("--gf_sigma", type=int, default=3, help="gaussian filter sigma")
+    parser.add_argument(
+        "--curvature_size", type=int, default=1, help="curvature filter size"
+    )
+    parser.add_argument(
+        "--height_scale",
+        type=float,
+        nargs=2,
+        default=[0.0, 1000.0],
+        help="height scale, min max",
+    )
+    parser.add_argument(
+        "--slope_scale",
+        type=float,
+        nargs=2,
+        default=[0.0, 1.5],
+        help="slope scale, min max",
+    )
+    parser.add_argument(
+        "--curvature_scale",
+        type=float,
+        nargs=2,
+        default=[-0.1, 0.1],
+        help="curvature scale, min max",
+    )
 
     args = parser.parse_args()
 
