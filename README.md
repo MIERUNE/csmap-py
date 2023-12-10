@@ -29,3 +29,7 @@ options:
 ```sh
 poetry run python -m csmap 12ke47_1mdem.tif --chunk_size 2048 --height_scale 200 500
 ```
+
+## processing image
+
+![](./doc/process.jpeg)
