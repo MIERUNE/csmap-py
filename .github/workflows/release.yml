@@ -3,6 +3,7 @@ name: Release
 on:
     release:
         types: [created]
+    workflow_dispatch:
 
 jobs:
     release-build:
@@ -17,7 +18,7 @@ jobs:
 
             - name: build release distributions
               run: |
-                  # NOTE: put your own distribution build steps here.
+                  pip install build
                   python -m build
 
             - name: upload windows dists
