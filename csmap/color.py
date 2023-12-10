@@ -23,9 +23,9 @@ def rgbify(arr: np.ndarray, method, scale: (float, float) = None) -> np.ndarray:
 
 def slope_red(arr: np.ndarray) -> np.ndarray:
     rgb = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb[0, :, :] = 255  # R
-    rgb[1, :, :] = (1 - arr) * 255  # G
-    rgb[2, :, :] = (1 - arr) * 255  # B
+    rgb[0, :, :] = 255 - arr * 155  # R: 255 -> 100
+    rgb[1, :, :] = 245 - arr * 195  # G: 245 -> 50
+    rgb[2, :, :] = 235 - arr * 215  # B: 235 -> 20
     rgb[3, :, :] = 255
     return rgb
 
@@ -41,9 +41,9 @@ def slope_blackwhite(arr: np.ndarray) -> np.ndarray:
 
 def curvature_blue(arr: np.ndarray) -> np.ndarray:
     rgb = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb[0, :, :] = (1 - arr) * 255  # R
-    rgb[1, :, :] = (1 - arr) * 255  # G
-    rgb[2, :, :] = 255  # B
+    rgb[0, :, :] = 35 + arr * 190  # R: 35 -> 225
+    rgb[1, :, :] = 80 + arr * 155  # G: 80 -> 235
+    rgb[2, :, :] = 100 + arr * 145  # B: 100 -> 245
     rgb[3, :, :] = 255
     return rgb
 
@@ -52,21 +52,20 @@ def curvature_redyellowblue(arr: np.ndarray) -> np.ndarray:
     # value:0-1 to: red -> yellow -> blue
     # interpolate between red and yellow, and yellow and blue, by linear
 
-    # 0-0.5: red -> yellow
+    # 0-0.5: blue -> white
     rgb1 = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb1[0, :, :] = 255  # R
-    rgb1[1, :, :] = arr * 510  # G
-    rgb1[2, :, :] = 30 + (arr * 2) * 225  # B
+    rgb1[0, :, :] = 75 + arr * 170 * 2  # R: 75 -> 245
+    rgb1[1, :, :] = 100 + arr * 145 * 2  # G: 100 -> 245
+    rgb1[2, :, :] = 165 + arr * 80 * 2  # B: 165 -> 245
 
-    # 0.5-1: yellow -> blue
+    # 0.5-1: white -> red
     rgb2 = np.zeros((4, arr.shape[0], arr.shape[1]), dtype=np.uint8)
-    rgb2[0, :, :] = (1 - (arr * 2 - 1)) * 255  # R
-    rgb2[1, :, :] = (1 - (arr * 2 - 1)) * 255  # G
-    rgb2[2, :, :] = 30 + (arr * 2 - 1) * 225  # B
+    rgb2[0, :, :] = 245 - (arr * 2 - 1) * 100  # R: 245 -> 145
+    rgb2[1, :, :] = 245 - (arr * 2 - 1) * 190  # G: 245 -> 55
+    rgb2[2, :, :] = 245 - (arr * 2 - 1) * 195  # B: 245 -> 50
 
     # blend
     rgb = np.where(arr < 0.5, rgb1, rgb2)
-    rgb = rgb * 0.5
     rgb[3, :, :] = 255
 
     return rgb
@@ -88,11 +87,11 @@ def blend(
     curvature_blue: np.ndarray,
     curvature_ryb: np.ndarray,
     blend_params: dict = {
-        "dem": 0.2,
-        "slope_red": 0.15,
-        "slope_bw": 0.35,
-        "curvature_blue": 0.1,
-        "curvature_ryb": 0.2,
+        "slope_bw": 0.5,  # alpha blending based on the paper
+        "curvature_ryb": 0.25,  # 0.5 / 2
+        "slope_red": 0.125,  # 0.5 / 2 / 2
+        "curvature_blue": 0.06125,  # 0.5 / 2 / 2 / 2
+        "dem": 0.030625,  # 0.5 / 2 / 2 / 2 / 2
     },
 ) -> np.ndarray:
     """blend all rgb
