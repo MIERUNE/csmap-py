@@ -107,4 +107,5 @@ def blend(
         + curvature_blue * blend_params["curvature_blue"]
         + curvature_ryb * blend_params["curvature_ryb"]
     )
+    _blend[3, :, :] = 255  # alpha
     return _blend
