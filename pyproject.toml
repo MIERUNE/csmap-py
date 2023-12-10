@@ -7,6 +7,9 @@ license = "MIT"
 readme = "README.md"
 packages = [{include = "csmap"}]
 
+[tool.poetry.scripts]
+csmap = "csmap.__main__:main"
+
 [tool.poetry.dependencies]
 python = "^3.10"
 numpy = "^1.26.2"
