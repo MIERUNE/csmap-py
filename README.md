@@ -53,7 +53,7 @@ csmap dem.tif csmap.tif --height_scale 0 500 --slope_scale 0 1 --curvature_scale
 ### Python API
 
 ```python
-from csmap import process, CsmapParams
+from csmap.process import process, CsmapParams
 
 params = CsmapParams() # use default params
 
