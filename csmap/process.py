@@ -67,8 +67,10 @@ def _process_chunk(
     csmap_chunk = csmap(chunk, params)
     csmap_chunk_margin_removed = csmap_chunk[
         :,
-        params.gf_size // 2 : -(params.gf_size // 2),
-        params.gf_size // 2 : -(params.gf_size // 2),
+        (params.gf_size + params.gf_sigma)
+        // 2 : -((params.gf_size + params.gf_sigma) // 2),
+        (params.gf_size + params.gf_sigma)
+        // 2 : -((params.gf_size + params.gf_sigma) // 2),
     ]  # shape = (4, chunk_size - margin, chunk_size - margin)
 
     if lock is None:
@@ -94,7 +96,7 @@ def process(
     with rasterio.open(input_dem_path) as dem:
         margin = params.gf_size + params.gf_sigma  # ガウシアンフィルタのサイズ+シグマ
         # チャンクごとの処理結果には「淵=margin」が生じるのでこの部分を除外する必要がある
-        margin_to_removed = 2 * (margin // 2)  # 整数値に切り捨てた値*両端
+        margin_to_removed = margin // 2  # 整数値に切り捨てた値*両端
 
         # マージンを考慮したtransform
         transform = Affine(
@@ -110,8 +112,8 @@ def process(
         )
 
         # 生成されるCS立体図のサイズ
-        out_width = dem.shape[1] - margin_to_removed - 2
-        out_height = dem.shape[0] - margin_to_removed - 2
+        out_width = dem.shape[1] - margin_to_removed * 2 - 2
+        out_height = dem.shape[0] - margin_to_removed * 2 - 2
 
         with rasterio.open(
             output_path,
@@ -126,7 +128,7 @@ def process(
             compress="LZW",
         ) as dst:
             # chunkごとに処理
-            chunk_csmap_size = chunk_size - margin_to_removed - 2
+            chunk_csmap_size = chunk_size - margin_to_removed * 2 - 2
 
             # 並列処理しない場合とする場合で処理を分ける
             if max_workers == 1:
