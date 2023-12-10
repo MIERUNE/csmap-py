@@ -107,4 +107,6 @@ def blend(
         + curvature_blue * blend_params["curvature_blue"]
         + curvature_ryb * blend_params["curvature_ryb"]
     )
+    _blend = _blend.astype(np.uint8)  # force uint8
+    _blend[3, :, :] = 255  # alpha
     return _blend
