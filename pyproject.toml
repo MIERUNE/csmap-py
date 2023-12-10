@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "csmap-py"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["MIERUNE Inc. <info@mierune.co.jp>"]
 license = "MIT"
