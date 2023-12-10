@@ -13,12 +13,12 @@ from csmap import color
 
 @dataclass
 class CsmapParams:
-    gf_size: int
-    gf_sigma: int
-    curvature_size: int
-    height_scale: (float, float)
-    slope_scale: (float, float)
-    curvature_scale: (float, float)
+    gf_size: int = 12
+    gf_sigma: int = 3
+    curvature_size: int = 1
+    height_scale: (float, float) = (0.0, 1000.0)
+    slope_scale: (float, float) = (0.0, 1.5)
+    curvature_scale: (float, float) = (-0.1, 0.1)
 
 
 def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:

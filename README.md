@@ -36,6 +36,8 @@ options:
 
 ## usage
 
+### Command Line Interface
+
 ```sh
 pip install csmap-py
 ```
@@ -46,6 +48,22 @@ csmap dem.vrt csmap.tif # you can use virtual raster or other gdal supported for
 csmap dem.tif csmap.tif --chunk_size 256 --max_workers 4 # you can use multiprocessing
 csmap dem.tif csmap.tif --gf_size 3 --gf_sigma 1.0 --curvature_size 1 # you can change filter size
 csmap dem.tif csmap.tif --height_scale 0 500 --slope_scale 0 1 --curvature_scale -0.2 0.2 # you can change scale
+```
+
+### Python API
+
+```python
+from csmap import process, CsmapParams
+
+params = CsmapParams() # use default params
+
+# convert dem to csmap
+process(
+    input_dem_path,
+    output_path,
+    chunk_size=1024,
+    params
+)
 ```
 
 ## processing image
