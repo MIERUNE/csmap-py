@@ -2,9 +2,7 @@
 name = "csmap-py"
 version = "0.1.0"
 description = ""
-authors = [
-  { name = "MIERUNE Inc.", email = "info@mierune.co.jp" },
-]
+authors = ["MIERUNE Inc. <info@mierune.co.jp>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "csmap"}]
