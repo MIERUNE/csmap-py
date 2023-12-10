@@ -123,6 +123,7 @@ def process(
             height=out_height,
             crs=dem.crs,
             transform=transform,
+            compress="LZW",
         ) as dst:
             # chunkごとに処理
             chunk_csmap_size = chunk_size - margin_to_removed - 2
