@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def rgbify(arr: np.ndarray, method, scale: (float, float) = None) -> np.ndarray:
+def rgbify(arr: np.ndarray, method, scale: tuple[float, float] = None) -> np.ndarray:
     """ndarrayをRGBに変換する
     - arrは変更しない
     - ndarrayのshapeは、(4, height, width) 4はRGBA
