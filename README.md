@@ -1,7 +1,7 @@
 # csmap-py
 
-![GitHub Release](<https://img.shields.io/github/v/release/MIERUNE/csmap-py?label=pip> install csmap-py)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/MIERUNE/csmap-py/test:unit.yml?label=test)
+![GitHub Release](https://img.shields.io/github/v/release/MIERUNE/csmap-py?label=PyPI:csmap-py)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/MIERUNE/csmap-py/test.yml?label=test)
 
 ![](./doc/csmap.png)
 
