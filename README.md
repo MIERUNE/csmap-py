@@ -1,8 +1,11 @@
 # csmap-py
 
+![GitHub Release](<https://img.shields.io/github/v/release/MIERUNE/csmap-py?label=pip> install csmap-py)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/MIERUNE/csmap-py/test:unit.yml?label=test)
+
 ![](./doc/csmap.png)
 
-module to process CSMap, based on https://www.rinya.maff.go.jp/j/seibi/sagyoudo/attach/pdf/romou-12.pdf
+module to process CSMap, based on <https://www.rinya.maff.go.jp/j/seibi/sagyoudo/attach/pdf/romou-12.pdf>
 
 ```planetext
 usage: csmap [-h] [--chunk_size CHUNK_SIZE] [--max_workers MAX_WORKERS] [--gf_size GF_SIZE]
