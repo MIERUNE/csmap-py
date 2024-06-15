@@ -52,6 +52,19 @@ def parse_args():
         default=[-0.1, 0.1],
         help="curvature scale, min max, default to -0.1 0.1",
     )
+    parser.add_argument(
+        "--a_srs",
+        type=str,
+        default=None,
+        help="assign CRS to the DEM, default to None",
+    )
+    parser.add_argument(
+        "--a_ullr",
+        type=float,
+        nargs=4,
+        default=None,
+        help="assign upper left and lower right coordinates for the extent, default to None",
+    )
 
     args = parser.parse_args()
 
@@ -62,6 +75,8 @@ def parse_args():
         height_scale=args.height_scale,
         slope_scale=args.slope_scale,
         curvature_scale=args.curvature_scale,
+        a_srs=args.a_srs,
+        a_ul_lr=args.a_ullr,
     )
 
     return {

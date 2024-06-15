@@ -9,6 +9,8 @@ from rasterio.windows import Window
 
 from csmap import calc, color
 
+from typing import Optional, Tuple
+
 
 @dataclass
 class CsmapParams:
@@ -18,6 +20,8 @@ class CsmapParams:
     height_scale: tuple[float, float] = (0.0, 1000.0)
     slope_scale: tuple[float, float] = (0.0, 1.5)
     curvature_scale: tuple[float, float] = (-0.1, 0.1)
+    a_srs: Optional[str] = None
+    a_ullr: Optional[Tuple[float, float, float, float]] = None
 
 
 def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
@@ -100,20 +104,30 @@ def process(
         margin_to_removed = margin // 2  # 整数値に切り捨てた値*両端
 
         # マージンを考慮したtransform
-        transform = Affine(
-            dem.transform.a,
-            dem.transform.b,
-            dem.transform.c
-            + (1 + margin // 2) * dem.transform.a,  # 左端の座標をマージン分ずらす
-            dem.transform.d,
-            dem.transform.e,
-            dem.transform.f
-            + (1 + margin // 2) * dem.transform.e,  # 上端の座標をマージン分ずらす
-        )
+        if params.a_ullr:
+            transform = rasterio.transform.from_bounds(
+                *params.a_ullr, dem.width, dem.height
+            )
+        else:
+            transform = Affine(
+                dem.transform.a,
+                dem.transform.b,
+                dem.transform.c
+                + (1 + margin // 2) * dem.transform.a,  # 左端の座標をマージン分ずらす
+                dem.transform.d,
+                dem.transform.e,
+                dem.transform.f
+                + (1 + margin // 2) * dem.transform.e,  # 上端の座標をマージン分ずらす
+            )
 
         # 生成されるCS立体図のサイズ
         out_width = dem.shape[1] - margin_to_removed * 2 - 2
         out_height = dem.shape[0] - margin_to_removed * 2 - 2
+
+        if params.a_srs:
+            crs = params.a_srs
+        else:
+            crs = dem.crs
 
         with rasterio.open(
             output_path,
@@ -123,7 +137,7 @@ def process(
             count=4,
             width=out_width,
             height=out_height,
-            crs=dem.crs,
+            crs=crs,
             transform=transform,
             compress="LZW",
         ) as dst:
