@@ -72,3 +72,7 @@ process(
 ## processing image
 
 ![](./doc/process.jpeg)
+
+## Authors
+
+- Kanahiro Iguchi([@Kanahiro](https://github.com/Kanahiro))
