@@ -75,4 +75,9 @@ process(
 
 ## Authors
 
-- Kanahiro Iguchi([@Kanahiro](https://github.com/Kanahiro))
+- Kanahiro Iguchi ([@Kanahiro](https://github.com/Kanahiro))
+
+### Acknowledgements
+
+Taku Fukada ([@ciscorn](https://github.com/ciscorn)) contributed the initial implementation by porting [SAGA](https://github.com/saga-gis/saga-gis)'s calculations to Python, leveraging numpy for vectorization.
+
