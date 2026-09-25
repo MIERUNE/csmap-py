@@ -1,6 +1,8 @@
 import os
 
+import numpy as np
 import rasterio
+from rasterio.enums import ColorInterp
 
 from csmap.process import process, csmap, CsmapParams
 
@@ -102,3 +104,59 @@ def test_process_by_worker():
 
     # compare all pixels
     assert (csmap_by_worker == csmap_fixture).all()
+
+
+def test_process_nodata_transparent(tmp_path):
+    """入力DEMのNoData範囲が出力で透過になることをテスト"""
+    dem_path = os.path.join(os.path.dirname(__file__), "fixture", "dem.tif")
+    with rasterio.open(dem_path) as src:
+        profile = src.profile
+        dem = src.read(1)
+
+    nodata = -9999.0
+    dem[500:700, 800:1200] = nodata
+    nodata_dem_path = tmp_path / "dem_nodata.tif"
+    profile.update(nodata=nodata)
+    with rasterio.open(nodata_dem_path, "w", **profile) as dst:
+        dst.write(dem, 1)
+
+    csmap_params = CsmapParams()
+    offset = 1 + (csmap_params.gf_size + csmap_params.gf_sigma) // 2
+
+    results = []
+    for chunk_size, max_workers in [(4096, 1), (256, 2)]:
+        output_path = tmp_path / f"csmap_{chunk_size}.tif"
+        process(
+            input_dem_path=str(nodata_dem_path),
+            output_path=str(output_path),
+            chunk_size=chunk_size,
+            params=csmap_params,
+            max_workers=max_workers,
+        )
+        with rasterio.open(output_path) as out:
+            result = out.read([1, 2, 3, 4])
+            assert out.colorinterp[3] == ColorInterp.alpha
+        results.append(result)
+
+        # 出力画素に対応する入力DEMのNoData範囲
+        expected_mask = (dem == nodata)[
+            offset : offset + result.shape[1], offset : offset + result.shape[2]
+        ]
+        assert (result[3][expected_mask] == 0).all()
+        assert (result[3][~expected_mask] == 255).all()
+
+    # チャンク分割・並列処理の有無で結果が一致すること
+    assert (results[0] == results[1]).all()
+
+
+def test_csmap_nan_transparent():
+    """NaNの画素が透過になることをテスト"""
+    dem_path = os.path.join(os.path.dirname(__file__), "fixture", "dem.tif")
+    dem = rasterio.open(dem_path).read(1)[:300, :300]
+    dem[100:150, 100:150] = np.nan
+
+    _csmap = csmap(dem, CsmapParams())
+
+    expected_mask = np.isnan(dem)[1:-1, 1:-1]
+    assert (_csmap[3][expected_mask] == 0).all()
+    assert (_csmap[3][~expected_mask] == 255).all()

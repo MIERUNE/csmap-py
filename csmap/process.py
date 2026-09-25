@@ -21,7 +21,16 @@ class CsmapParams:
 
 
 def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
-    """DEMからCS立体図を作成する"""
+    """DEMからCS立体図を作成する
+    demがMaskedArrayの場合、マスクされた画素(NoData)は出力で透過となる
+    """
+    # NoData(マスク値・NaN)を記録し、計算への影響を抑えるため0で埋める
+    nodata_mask = np.ma.getmaskarray(dem)
+    dem = np.ma.getdata(dem)
+    if np.issubdtype(dem.dtype, np.floating):
+        nodata_mask = nodata_mask | np.isnan(dem)
+    dem = np.where(nodata_mask, 0, dem)
+
     # calclucate elements
     slope = calc.slope(dem)
     g = calc.gaussianfilter(dem, params.gf_size, params.gf_sigma)
@@ -48,6 +57,9 @@ def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
         curvature_blue,
         curvature_ryb,
     )
+
+    # NoDataの画素を透過にする
+    blend[:, nodata_mask[1:-1, 1:-1]] = 0
 
     return blend
 
@@ -142,7 +154,9 @@ def process(
                         if y + chunk_csmap_size > out_height:
                             write_size_y = out_height - y
 
-                        chunk = dem.read(1, window=Window(x, y, chunk_size, chunk_size))
+                        chunk = dem.read(
+                            1, window=Window(x, y, chunk_size, chunk_size), masked=True
+                        )
                         _process_chunk(
                             chunk,
                             dst,
@@ -167,7 +181,9 @@ def process(
                                 write_size_y = out_height - y
 
                             chunk = dem.read(
-                                1, window=Window(x, y, chunk_size, chunk_size)
+                                1,
+                                window=Window(x, y, chunk_size, chunk_size),
+                                masked=True,
                             )
                             executor.submit(
                                 _process_chunk,
