@@ -1,7 +1,9 @@
 import numpy as np
 
 
-def rgbify(arr: np.ndarray, method, scale: tuple[float, float] = None) -> np.ndarray:
+def rgbify(
+    arr: np.ndarray, method, scale: tuple[float, float] | None = None
+) -> np.ndarray:
     """ndarrayをRGBに変換する
     - arrは変更しない
     - ndarrayのshapeは、(4, height, width) 4はRGBA
@@ -80,25 +82,30 @@ def height_blackwhite(arr: np.ndarray) -> np.ndarray:
     return rgb
 
 
+DEFAULT_BLEND_PARAMS = {
+    "slope_bw": 0.5,  # alpha blending based on the paper
+    "curvature_ryb": 0.25,  # 0.5 / 2
+    "slope_red": 0.125,  # 0.5 / 2 / 2
+    "curvature_blue": 0.06125,  # 0.5 / 2 / 2 / 2
+    "dem": 0.030625,  # 0.5 / 2 / 2 / 2 / 2
+}
+
+
 def blend(
     dem_bw: np.ndarray,
     slope_red: np.ndarray,
     slope_bw: np.ndarray,
     curvature_blue: np.ndarray,
     curvature_ryb: np.ndarray,
-    blend_params: dict = {
-        "slope_bw": 0.5,  # alpha blending based on the paper
-        "curvature_ryb": 0.25,  # 0.5 / 2
-        "slope_red": 0.125,  # 0.5 / 2 / 2
-        "curvature_blue": 0.06125,  # 0.5 / 2 / 2 / 2
-        "dem": 0.030625,  # 0.5 / 2 / 2 / 2 / 2
-    },
+    blend_params: dict | None = None,
 ) -> np.ndarray:
     """blend all rgb
     全てのndarrayは同じshapeであること
     DEMを用いて処理した他の要素は、DEMよりも1px内側にpaddingされているので
     あらかじめDEMのpaddingを除外しておく必要がある
     """
+    if blend_params is None:
+        blend_params = DEFAULT_BLEND_PARAMS
     _blend = np.zeros((4, dem_bw.shape[0], dem_bw.shape[1]), dtype=np.uint8)
     _blend = (
         dem_bw * blend_params["dem"]

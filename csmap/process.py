@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from concurrent import futures
 from dataclasses import dataclass
 from threading import Lock
@@ -75,7 +77,7 @@ def _process_chunk(
     write_size_x: int,
     write_size_y: int,
     params: CsmapParams,
-    lock: Lock = None,
+    lock: Lock | None = None,
 ) -> np.ndarray:
     """チャンクごとの処理"""
     csmap_chunk = csmap(chunk, params)

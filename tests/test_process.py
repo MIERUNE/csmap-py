@@ -4,7 +4,7 @@ import numpy as np
 import rasterio
 from rasterio.enums import ColorInterp
 
-from csmap.process import process, csmap, CsmapParams
+from csmap.process import CsmapParams, csmap, process
 
 
 def assert_almost_equal(actual: np.ndarray, expected: np.ndarray):
