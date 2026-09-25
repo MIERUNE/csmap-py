@@ -110,10 +110,17 @@ def process(
     max_workers: int = 1,
     bigtiff: str = "IF_SAFER",
 ):
-    """DEMからCS立体図を作成しGeoTIFFで出力する
+    """DEMからCS立体図を作成し、RGBAのGeoTIFF(LZW圧縮)で出力する
+    入力DEMのNoDataは出力で透過となる
+    フィルタの影響で出力は入力よりも周囲が(gf_size + gf_sigma) // 2 + 1画素ずつ小さくなる
 
+    input_dem_path: 入力DEMのパス(GDALで読めるフォーマット、VRTなども可)
+    output_path: 出力するCS立体図のパス
+    chunk_size: 1回に読み込んで処理するチャンクの一辺の画素数
+    params: CS立体図の作成パラメータ
+    max_workers: 並列処理のスレッド数、1なら並列処理しない
     bigtiff: GDALのGTiffドライバのBIGTIFFオプション(YES/NO/IF_NEEDED/IF_SAFER)
-        圧縮(LZW)して出力するため、IF_NEEDEDでは4GBを超えてもBigTIFFにならない
+        圧縮して出力するため、IF_NEEDEDでは4GBを超えてもBigTIFFにならない
         デフォルトのIF_SAFERは推定サイズが大きい場合にBigTIFFで出力する
     """
     with rasterio.open(input_dem_path) as dem:
