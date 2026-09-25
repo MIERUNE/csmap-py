@@ -10,19 +10,16 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
 
-            - uses: actions/setup-python@v4
-              with:
-                  python-version: '3.x'
+            - name: Install uv
+              uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
 
             - name: build release distributions
-              run: |
-                  pip install build
-                  python -m build
+              run: uv build
 
-            - name: upload windows dists
-              uses: actions/upload-artifact@v3
+            - name: upload dists
+              uses: actions/upload-artifact@v7
               with:
                   name: release-dists
                   path: dist/
@@ -36,7 +33,7 @@ jobs:
 
         steps:
             - name: Retrieve release distributions
-              uses: actions/download-artifact@v4.1.7
+              uses: actions/download-artifact@v8
               with:
                   name: release-dists
                   path: dist/

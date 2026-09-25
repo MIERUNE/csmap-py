@@ -3,8 +3,7 @@ import pytest
 import rasterio
 from rasterio.transform import from_origin
 
-from csmap.process import process, CsmapParams
-
+from csmap.process import CsmapParams, process
 
 PARAMS = CsmapParams(
     gf_size=12,
@@ -85,9 +84,9 @@ def test_nodata_is_transparent(tmp_path, dtype, nodata):
     transparent_ratio = (alpha == 0).mean()
 
     # 縁が削られる分だけ NoData 比率とはわずかにずれるため許容幅を持たせる
-    assert transparent_ratio == pytest.approx(
-        nodata_ratio, abs=0.05
-    ), f"{dtype}/{nodata}: 透明={transparent_ratio:.3f} 期待={nodata_ratio:.3f}"
+    assert transparent_ratio == pytest.approx(nodata_ratio, abs=0.05), (
+        f"{dtype}/{nodata}: 透明={transparent_ratio:.3f} 期待={nodata_ratio:.3f}"
+    )
 
 
 def test_nodata_transparent_by_worker(tmp_path):

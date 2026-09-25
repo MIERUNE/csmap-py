@@ -4,7 +4,7 @@ import numpy as np
 import rasterio
 from rasterio.enums import ColorInterp
 
-from csmap.process import process, csmap, CsmapParams
+from csmap.process import CsmapParams, csmap, process
 
 
 def assert_almost_equal(actual: np.ndarray, expected: np.ndarray):
@@ -196,9 +196,10 @@ def test_process_bigtiff(tmp_path):
         assert _is_bigtiff(output_path) == expected, bigtiff
 
     # BigTIFFでも内容は変わらないこと
-    with rasterio.open(tmp_path / "csmap_YES.tif") as a, rasterio.open(
-        tmp_path / "csmap_NO.tif"
-    ) as b:
+    with (
+        rasterio.open(tmp_path / "csmap_YES.tif") as a,
+        rasterio.open(tmp_path / "csmap_NO.tif") as b,
+    ):
         assert (a.read() == b.read()).all()
 
 
