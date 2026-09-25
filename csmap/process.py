@@ -108,7 +108,14 @@ def process(
     chunk_size: int,
     params: CsmapParams,
     max_workers: int = 1,
+    bigtiff: str = "IF_SAFER",
 ):
+    """DEMからCS立体図を作成しGeoTIFFで出力する
+
+    bigtiff: GDALのGTiffドライバのBIGTIFFオプション(YES/NO/IF_NEEDED/IF_SAFER)
+        圧縮(LZW)して出力するため、IF_NEEDEDでは4GBを超えてもBigTIFFにならない
+        デフォルトのIF_SAFERは推定サイズが大きい場合にBigTIFFで出力する
+    """
     with rasterio.open(input_dem_path) as dem:
         margin = params.gf_size + params.gf_sigma  # ガウシアンフィルタのサイズ+シグマ
         # チャンクごとの処理結果には「淵=margin」が生じるのでこの部分を除外する必要がある
@@ -141,6 +148,7 @@ def process(
             crs=dem.crs,
             transform=transform,
             compress="LZW",
+            BIGTIFF=bigtiff,
         ) as dst:
             # chunkごとに処理
             chunk_csmap_size = chunk_size - margin_to_removed * 2 - 2
@@ -171,6 +179,7 @@ def process(
                         )
             else:  # 並列処理する場合=ThreadPoolExecutorを使用する
                 lock = Lock()  # 並列処理のロック
+                tasks = []
                 with futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                     # chunkごとに処理
                     for y in range(0, dem.shape[0], chunk_csmap_size):
@@ -188,14 +197,19 @@ def process(
                                 window=Window(x, y, chunk_size, chunk_size),
                                 masked=True,
                             )
-                            executor.submit(
-                                _process_chunk,
-                                chunk,
-                                dst,
-                                x,
-                                y,
-                                write_size_x,
-                                write_size_y,
-                                params,
-                                lock,
+                            tasks.append(
+                                executor.submit(
+                                    _process_chunk,
+                                    chunk,
+                                    dst,
+                                    x,
+                                    y,
+                                    write_size_x,
+                                    write_size_y,
+                                    params,
+                                    lock,
+                                )
                             )
+                # スレッド内で発生した例外(書き込みエラー等)を握りつぶさず送出する
+                for task in tasks:
+                    task.result()
