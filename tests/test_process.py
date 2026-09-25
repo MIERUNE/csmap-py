@@ -170,3 +170,55 @@ def test_csmap_integer_dem():
     for dtype in ["int16", "uint16", "int32"]:
         _csmap = csmap(dem.astype(dtype), CsmapParams())
         assert (_csmap == expected).all(), dtype
+
+
+def _is_bigtiff(path) -> bool:
+    """TIFFヘッダのバージョン番号でBigTIFF(43)かClassic TIFF(42)かを判定する"""
+    with open(path, "rb") as f:
+        header = f.read(4)
+    byteorder = "little" if header[:2] == b"II" else "big"
+    return int.from_bytes(header[2:4], byteorder) == 43
+
+
+def test_process_bigtiff(tmp_path):
+    """bigtiffオプションが出力に反映されることをテスト"""
+    dem_path = os.path.join(os.path.dirname(__file__), "fixture", "dem.tif")
+
+    for bigtiff, expected in [("YES", True), ("NO", False), ("IF_SAFER", False)]:
+        output_path = tmp_path / f"csmap_{bigtiff}.tif"
+        process(
+            input_dem_path=dem_path,
+            output_path=str(output_path),
+            chunk_size=1024,
+            params=CsmapParams(),
+            bigtiff=bigtiff,
+        )
+        assert _is_bigtiff(output_path) == expected, bigtiff
+
+    # BigTIFFでも内容は変わらないこと
+    with rasterio.open(tmp_path / "csmap_YES.tif") as a, rasterio.open(
+        tmp_path / "csmap_NO.tif"
+    ) as b:
+        assert (a.read() == b.read()).all()
+
+
+def test_process_raises_in_worker(tmp_path, monkeypatch):
+    """並列処理時にスレッド内の例外が握りつぶされず送出されることをテスト"""
+    import pytest
+
+    from csmap import process as process_module
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError("write failed")
+
+    monkeypatch.setattr(process_module, "_process_chunk", _raise)
+
+    dem_path = os.path.join(os.path.dirname(__file__), "fixture", "dem.tif")
+    with pytest.raises(RuntimeError, match="write failed"):
+        process(
+            input_dem_path=dem_path,
+            output_path=str(tmp_path / "csmap.tif"),
+            chunk_size=256,
+            params=CsmapParams(),
+            max_workers=2,
+        )

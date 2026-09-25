@@ -20,6 +20,13 @@ def parse_args():
         help="max workers for multiprocessing, default to 1",
     )
     parser.add_argument(
+        "--bigtiff",
+        type=str.upper,
+        choices=["YES", "NO", "IF_NEEDED", "IF_SAFER"],
+        default="IF_SAFER",
+        help="BIGTIFF creation option of GeoTIFF, default to IF_SAFER",
+    )
+    parser.add_argument(
         "--gf_size", type=int, default=12, help="gaussian filter size, default to 12"
     )
     parser.add_argument(
@@ -69,6 +76,7 @@ def parse_args():
         "output_path": args.output_path,
         "chunk_size": args.chunk_size,
         "max_workers": args.max_workers,
+        "bigtiff": args.bigtiff,
         "params": params,
     }
 

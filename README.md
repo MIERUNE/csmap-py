@@ -8,7 +8,8 @@
 module to process CSMap, based on <https://www.rinya.maff.go.jp/j/seibi/sagyoudo/attach/pdf/romou-12.pdf>
 
 ```planetext
-usage: csmap [-h] [--chunk_size CHUNK_SIZE] [--max_workers MAX_WORKERS] [--gf_size GF_SIZE]
+usage: csmap [-h] [--chunk_size CHUNK_SIZE] [--max_workers MAX_WORKERS]
+                   [--bigtiff {YES,NO,IF_NEEDED,IF_SAFER}] [--gf_size GF_SIZE]
                    [--gf_sigma GF_SIGMA] [--curvature_size CURVATURE_SIZE]
                    [--height_scale HEIGHT_SCALE HEIGHT_SCALE]
                    [--slope_scale SLOPE_SCALE SLOPE_SCALE]
@@ -25,6 +26,8 @@ options:
                         chunk size as pixel, default to 1024
   --max_workers MAX_WORKERS
                         max workers for multiprocessing, default to 1
+  --bigtiff {YES,NO,IF_NEEDED,IF_SAFER}
+                        BIGTIFF creation option of GeoTIFF, default to IF_SAFER
   --gf_size GF_SIZE     gaussian filter size, default to 12
   --gf_sigma GF_SIGMA   gaussian filter sigma, default to 3
   --curvature_size CURVATURE_SIZE
@@ -49,6 +52,7 @@ pip install csmap-py
 csmap dem.tif csmap.tif
 csmap dem.vrt csmap.tif # you can use virtual raster or other gdal supported format
 csmap dem.tif csmap.tif --chunk_size 256 --max_workers 4 # you can use multiprocessing
+csmap dem.tif csmap.tif --bigtiff YES # force BigTIFF output (default IF_SAFER writes BigTIFF when output may exceed 4GB)
 csmap dem.tif csmap.tif --gf_size 3 --gf_sigma 1.0 --curvature_size 1 # you can change filter size
 csmap dem.tif csmap.tif --height_scale 0 500 --slope_scale 0 1 --curvature_scale -0.2 0.2 # you can change scale
 ```
