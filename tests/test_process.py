@@ -7,6 +7,15 @@ from rasterio.enums import ColorInterp
 from csmap.process import process, csmap, CsmapParams
 
 
+def assert_almost_equal(actual: np.ndarray, expected: np.ndarray):
+    """浮動小数点演算の結果はCPU(SIMD命令の有無など)によってわずかに異なり、
+    uint8への切り捨てで±1の差が生じることがあるため、その範囲の差は許容する"""
+    assert actual.shape == expected.shape
+    assert actual.dtype == expected.dtype
+    diff = np.abs(actual.astype(np.int16) - expected.astype(np.int16))
+    assert diff.max() <= 1
+
+
 def test_csmap():
     """リグレッションがないか確認する"""
     dem_path = os.path.join(os.path.dirname(__file__), "fixture", "dem.tif")
@@ -27,11 +36,7 @@ def test_csmap():
     csmap_fixture_path = os.path.join(os.path.dirname(__file__), "fixture", "csmap.tif")
     csmap_fixture = rasterio.open(csmap_fixture_path).read([1, 2, 3, 4])
 
-    assert _csmap.shape == csmap_fixture.shape
-    assert _csmap.dtype == csmap_fixture.dtype
-
-    # compare all pixels
-    assert (_csmap == csmap_fixture).all()
+    assert_almost_equal(_csmap, csmap_fixture)
 
 
 def test_process_by_chunk():
@@ -63,11 +68,7 @@ def test_process_by_chunk():
     )
     csmap_fixture = rasterio.open(csmap_fixture_path).read([1, 2, 3, 4])
 
-    assert csmap_by_chunk.shape == csmap_fixture.shape
-    assert csmap_by_chunk.dtype == csmap_fixture.dtype
-
-    # compare all pixels
-    assert (csmap_by_chunk == csmap_fixture).all()
+    assert_almost_equal(csmap_by_chunk, csmap_fixture)
 
 
 def test_process_by_worker():
@@ -99,11 +100,7 @@ def test_process_by_worker():
     )
     csmap_fixture = rasterio.open(csmap_fixture_path).read([1, 2, 3, 4])
 
-    assert csmap_by_worker.shape == csmap_fixture.shape
-    assert csmap_by_worker.dtype == csmap_fixture.dtype
-
-    # compare all pixels
-    assert (csmap_by_worker == csmap_fixture).all()
+    assert_almost_equal(csmap_by_worker, csmap_fixture)
 
 
 def test_process_nodata_transparent(tmp_path):
