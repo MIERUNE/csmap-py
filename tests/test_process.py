@@ -157,3 +157,16 @@ def test_csmap_nan_transparent():
     expected_mask = np.isnan(dem)[1:-1, 1:-1]
     assert (_csmap[3][expected_mask] == 0).all()
     assert (_csmap[3][~expected_mask] == 255).all()
+
+
+def test_csmap_integer_dem():
+    """整数型のDEMでも、同じ値のfloat32のDEMと結果が一致することをテスト
+    (uint16などで差分計算がオーバーフローしないこと)"""
+    dem_path = os.path.join(os.path.dirname(__file__), "fixture", "dem.tif")
+    dem = rasterio.open(dem_path).read(1)[:300, :300]
+    dem = np.clip(np.round(dem), 0, 3000)
+
+    expected = csmap(dem.astype(np.float32), CsmapParams())
+    for dtype in ["int16", "uint16", "int32"]:
+        _csmap = csmap(dem.astype(dtype), CsmapParams())
+        assert (_csmap == expected).all(), dtype

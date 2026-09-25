@@ -27,8 +27,11 @@ def csmap(dem: np.ndarray, params: CsmapParams) -> np.ndarray:
     # NoData(マスク値・NaN)を記録し、計算への影響を抑えるため0で埋める
     nodata_mask = np.ma.getmaskarray(dem)
     dem = np.ma.getdata(dem)
-    if np.issubdtype(dem.dtype, np.floating):
-        nodata_mask = nodata_mask | np.isnan(dem)
+    # 整数型のDEMは差分計算でオーバーフローしうるためfloat32に昇格する
+    # float64のDEMは精度を落とさないようそのまま扱う
+    if not np.issubdtype(dem.dtype, np.floating):
+        dem = dem.astype(np.float32)
+    nodata_mask = nodata_mask | np.isnan(dem)
     dem = np.where(nodata_mask, 0, dem)
 
     # calclucate elements
