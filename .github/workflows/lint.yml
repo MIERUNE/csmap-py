@@ -23,7 +23,7 @@ jobs:
               run: poetry install
 
             - name: Check poetry.lock
-              run: poetry lock --check
+              run: poetry check --lock
 
             # - name: Type-check with Pyright
             #   run: poetry run pyright .
