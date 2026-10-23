@@ -25,6 +25,10 @@ dev = [
 requires = ["uv_build>=0.12.19,<0.13"]
 build-backend = "uv_build"
 
+[tool.uv]
+# GHSA-hq85-5cpj-mr62: 0.13.5 rejects the compromised eMudhra intermediate CA keys
+required-version = ">=0.13.5"
+
 [tool.uv.build-backend]
 module-name = "csmap"
 module-root = ""
